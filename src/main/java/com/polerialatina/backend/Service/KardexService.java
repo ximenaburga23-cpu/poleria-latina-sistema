@@ -1,10 +1,10 @@
 package com.polerialatina.backend.Service;
 
-import com.polerialatina.backend.Model.Insumo;
 import com.polerialatina.backend.Model.Kardex;
+import com.polerialatina.backend.Model.Insumo;
 import com.polerialatina.backend.Model.Receta;
-import com.polerialatina.backend.Repository.InsumoRepository;
 import com.polerialatina.backend.Repository.KardexRepository;
+import com.polerialatina.backend.Repository.InsumoRepository;
 import com.polerialatina.backend.Repository.RecetaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,29 +28,32 @@ public class KardexService {
 
     @Transactional
     public void registrarSalidaPorVenta(Long productoId, int cantidadVendida) {
-        // 1. Buscamos qué ingredientes (receta/escandallo) componen este plato
         List<Receta> recetas = recetaRepository.findByProductoId(productoId);
 
         for (Receta receta : recetas) {
             Insumo insumo = receta.getInsumo();
             
-            // Calculamos el consumo total (Ej: 0.25 kg x 2 platos vendidos = 0.50 kg)
-            BigDecimal consumoTotal = receta.getCantidadConsumida().multiply(BigDecimal.valueOf(cantidadVendida));
+            // Calculamos el total a descontar en BigDecimal
+            BigDecimal totalDescuento = BigDecimal.valueOf(receta.getCantidadNecesaria())
+                    .multiply(BigDecimal.valueOf(cantidadVendida));
 
-            // Restamos al stock actual del almacén
-            BigDecimal stockNuevo = insumo.getStockActual().subtract(consumoTotal);
-            insumo.setStockActual(stockNuevo);
+            BigDecimal stockActual = insumo.getStockActual();
+            BigDecimal nuevoStock = stockActual.subtract(totalDescuento);
+            
+            // Evitamos stock negativo (si es menor a 0, se queda en 0)
+            if (nuevoStock.compareTo(BigDecimal.ZERO) < 0) {
+                nuevoStock = BigDecimal.ZERO;
+            }
+
+            insumo.setStockActual(nuevoStock);
             insumoRepository.save(insumo);
 
-            // Registramos el movimiento exacto en el Kardex
             Kardex movimiento = new Kardex();
             movimiento.setInsumo(insumo);
-            movimiento.setTipoMovimiento("SALIDA");
-            movimiento.setCantidad(consumoTotal);
-            movimiento.setStockResultante(stockNuevo);
-            movimiento.setMotivo("Venta POS - Plato ID: " + productoId);
+            movimiento.setTipoMovimiento("SALIDA_VENTA");
+            movimiento.setCantidad(totalDescuento);
+            movimiento.setStockResultante(insumo.getStockActual());
             movimiento.setFechaHora(LocalDateTime.now());
-
             kardexRepository.save(movimiento);
         }
     }
