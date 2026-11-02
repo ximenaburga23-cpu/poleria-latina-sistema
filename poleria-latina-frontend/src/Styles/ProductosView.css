@@ -1,0 +1,218 @@
+.productos-container {
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.productos-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #7f1d1d;
+  margin-bottom: 4px;
+}
+
+.productos-subtitle {
+  color: #4b5563;
+  margin-bottom: 24px;
+}
+
+/* Formulario */
+.productos-form {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-group input, 
+.form-group select {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-group input:focus, 
+.form-group select:focus {
+  border-color: #7f1d1d;
+}
+
+.btn-guardar {
+  background-color: #16a34a;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-guardar:hover {
+  background-color: #15803d;
+}
+
+.btn-cancelar {
+  background-color: #9ca3af;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Filtros y barra superior */
+.productos-acciones-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.input-buscar {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  width: 280px;
+  text-transform: uppercase;
+}
+
+.btn-ojo {
+  background-color: white;
+  border: 1px solid #d1d5db;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ojo.activo {
+  background-color: #fee2e2;
+  border-color: #f87171;
+  color: #991b1b;
+}
+
+/* Tabla */
+.tabla-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.productos-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.productos-table th {
+  background-color: #f3f4f6;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.productos-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.productos-table tr:hover {
+  background-color: #f9fafb;
+}
+
+.badge-precio {
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+/* Botones de acción en tabla */
+.btn-accion-editar {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-accion-estado {
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-accion-estado.desactivar {
+  background-color: #ef4444;
+}
+
+.btn-accion-estado.activar {
+  background-color: #22c55e;
+}
+
+/* Paginación */
+.paginacion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.paginacion-botones {
+  display: flex;
+  gap: 4px;
+}
+
+.paginacion-botones button {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.paginacion-botones button.active {
+  background-color: #7f1d1d;
+  color: white;
+  border-color: #7f1d1d;
+}
+
+.paginacion-botones button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
