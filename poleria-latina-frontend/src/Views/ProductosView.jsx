@@ -53,7 +53,6 @@ export default function ProductosView() {
       setCategoria('POLLOS');
       cargarProductos();
     } catch (error) {
-      // Extraemos el mensaje de texto correctamente sin mostrar [object Object]
       const mensajeError = typeof error.response?.data === 'string'
         ? error.response.data
         : error.response?.data?.message || "El plato o bebida ya existe en el sistema o hubo un error.";
@@ -64,7 +63,7 @@ export default function ProductosView() {
   const iniciarEdicion = (prod) => {
     setEditandoId(prod.id);
     setNombre(prod.nombre);
-    setPrecio(prod.precio);
+    setPrecio(prod.precioVenta ?? prod.precio ?? '');
     setCategoria(prod.categoria);
   };
 
@@ -97,12 +96,14 @@ export default function ProductosView() {
 
   return (
     <div className="productos-container">
-      <h2 className="productos-title">Gestión de Menú y Platos</h2>
-      <p className="productos-subtitle">Agrega, edita o desactiva platos para el Punto de Venta.</p>
+      <div className="productos-header-box">
+        <h2 className="productos-title">Gestión de Menú y Platos</h2>
+        <p className="productos-subtitle">Agrega, edita o desactiva platos para el Punto de Venta.</p>
+      </div>
 
       {/* Formulario */}
       <form onSubmit={guardarProducto} className="productos-form">
-        <div className="form-group">
+        <div className="form-group" style={{ flex: 2 }}>
           <label>Nombre del Plato / Bebida:</label>
           <input
             type="text"
@@ -113,7 +114,7 @@ export default function ProductosView() {
           />
         </div>
 
-        <div className="form-group" style={{ maxWidth: '140px' }}>
+        <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
           <label>Precio (S/):</label>
           <input
             type="number"
@@ -130,7 +131,7 @@ export default function ProductosView() {
           />
         </div>
 
-        <div className="form-group" style={{ maxWidth: '180px' }}>
+        <div className="form-group" style={{ flex: 1.5, minWidth: '160px' }}>
           <label>Categoría:</label>
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
             <option value="POLLOS">POLLOS</option>
@@ -142,8 +143,8 @@ export default function ProductosView() {
           </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button type="submit" className="btn-guardar" style={{ backgroundColor: editandoId ? '#ca8a04' : '#16a34a' }}>
+        <div className="form-actions-group">
+          <button type="submit" className={`btn-guardar ${editandoId ? 'editando' : ''}`}>
             {editandoId ? 'Actualizar Plato' : '+ Agregar Plato'}
           </button>
           {editandoId && (
@@ -156,13 +157,15 @@ export default function ProductosView() {
 
       {/* Barra de Filtros y Botón Ojo */}
       <div className="productos-acciones-bar">
-        <input
-          type="text"
-          placeholder="🔍 Buscar plato..."
-          value={busqueda}
-          onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
-          className="input-buscar"
-        />
+        <div className="search-wrapper">
+          <input
+            type="text"
+            placeholder="🔍 Buscar plato..."
+            value={busqueda}
+            onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
+            className="input-buscar"
+          />
+        </div>
 
         <button
           onClick={() => { setMostrarInactivos(!mostrarInactivos); setPaginaActual(1); }}
@@ -177,37 +180,41 @@ export default function ProductosView() {
         <table className="productos-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th style={{ width: '60px' }}>#</th>
               <th>Plato / Producto</th>
               <th>Categoría</th>
               <th>Precio</th>
-              <th style={{ textAlign: 'center' }}>Acciones</th>
+              <th style={{ textAlign: 'center', width: '180px' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {productosPaginados.length > 0 ? (
               productosPaginados.map((p, index) => (
                 <tr key={p.id}>
-                  <td style={{ color: '#6b7280' }}>{indexPrimero + index + 1}</td>
-                  <td style={{ fontWeight: 500 }}>{p.nombre}</td>
-                  <td style={{ color: '#4b5563' }}>{p.categoria}</td>
+                  <td style={{ color: '#94a3b8', fontWeight: '500' }}>{indexPrimero + index + 1}</td>
+                  <td style={{ fontWeight: '600', color: '#1e293b' }}>{p.nombre}</td>
+                  <td>
+                    <span className="categoria-badge">{p.categoria}</span>
+                  </td>
                   <td className="badge-precio">S/ {p.precioVenta ? p.precioVenta.toFixed(2) : '0.00'}</td>
-                  <td style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                    <button onClick={() => iniciarEdicion(p)} className="btn-accion-editar">
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => toggleEstado(p.id)}
-                      className={`btn-accion-estado ${p.activo ? 'desactivar' : 'activar'}`}
-                    >
-                      {p.activo ? 'Desactivar' : 'Activar'}
-                    </button>
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="table-actions">
+                      <button onClick={() => iniciarEdicion(p)} className="btn-accion-editar">
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => toggleEstado(p.id)}
+                        className={`btn-accion-estado ${p.activo ? 'desactivar' : 'activar'}`}
+                      >
+                        {p.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
                   No se encontraron registros.
                 </td>
               </tr>
@@ -217,7 +224,7 @@ export default function ProductosView() {
 
         {/* Paginación */}
         <div className="paginacion-footer">
-          <span style={{ fontSize: '14px', color: '#4b5563' }}>
+          <span style={{ fontSize: '13px', color: '#64748b' }}>
             Mostrando {productosPaginados.length} de {productosFiltrados.length} registros
           </span>
           <div className="paginacion-botones">

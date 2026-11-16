@@ -1,256 +1,378 @@
 import React, { useState } from 'react';
+import '../Styles/SalonView.css';
 
 export default function SalonView({ mesas = [], setMesas, productos = [] }) {
-  const [nuevaMesaNombre, setNuevaMesaNombre] = useState('');
-  
-  // Estados para el modal de cobro
-  const [mesaACobrar, setMesaACobrar] = useState(null);
+  const [mesaSeleccionada, setMesaSeleccionada] = useState(mesas[0] || null);
+  const [filtroEstado, setFiltroEstado] = useState('TODAS');
+  const [mostrarModalNuevaMesa, setMostrarModalNuevaMesa] = useState(false);
+  const [nombreNuevaMesa, setNombreNuevaMesa] = useState('');
+
+  // Estados para modal de cobro / finalizar orden
+  const [modalCobroAbierto, setModalCobroAbierto] = useState(false);
   const [metodoPago, setMetodoPago] = useState('EFECTIVO');
-  const [montoConquePaga, setMontoConquePaga] = useState('');
+  const [montoPaga, setMontoPaga] = useState('');
 
-  // Estados para el modal de "Añadir más productos a mesa ocupada"
-  const [mesaParaAgregar, setMesaParaAgregar] = useState(null);
+  // Filtrar mesas según pestañas superiores
+  const mesasFiltradas = mesas.filter(m => {
+    if (filtroEstado === 'TODAS') return true;
+    if (filtroEstado === 'LIBRE') return m.estado === 'Libre';
+    if (filtroEstado === 'OCUPADA') return m.estado === 'Ocupada';
+    if (filtroEstado === 'POR_COBRAR') return m.estado === 'Por cobrar';
+    return true;
+  });
 
-  const agregarNuevaMesa = (e) => {
+  const totalMesas = mesas.length;
+  const libresCount = mesas.filter(m => m.estado === 'Libre').length;
+  const ocupadasCount = mesas.filter(m => m.estado === 'Ocupada').length;
+  const porCobrarCount = mesas.filter(m => m.estado === 'Por cobrar').length;
+
+  const handleCrearMesa = (e) => {
     e.preventDefault();
-    if (!nuevaMesaNombre) return;
-    setMesas([...mesas, { id: nuevaMesaNombre, estado: 'Libre', items: [], total: 0 }]);
-    setNuevaMesaNombre('');
-    alert("¡Mesa agregada correctamente al salón!");
+    if (!nombreNuevaMesa.trim()) return;
+    const nueva = {
+      id: nombreNuevaMesa.trim(),
+      estado: 'Libre',
+      personas: 4,
+      tiempo: '0 min en mesa',
+      moza: 'Lucía P.',
+      orden: '#0' + Math.floor(1000 + Math.random() * 9000),
+      items: [],
+      subtotal: 0,
+      igv: 0,
+      total: 0
+    };
+    setMesas([...mesas, nueva]);
+    setNombreNuevaMesa('');
+    setMostrarModalNuevaMesa(false);
   };
 
-  const cancelarPedidoMesa = (mesaId) => {
-    if (window.confirm(`¿Estás seguro de cancelar el pedido de ${mesaId}? Los clientes se retiran.`)) {
-      setMesas(mesas.map(m => m.id === mesaId ? { ...m, estado: 'Libre', items: [], total: 0 } : m));
-    }
-  };
+  const agregarProductoAMesa = (prod) => {
+    if (!mesaSeleccionada) return;
+    const precio = parseFloat(prod.precioVenta ?? prod.precio ?? 0);
 
-  const abrirModalCobro = (mesa) => {
-    setMesaACobrar(mesa);
-    setMetodoPago('EFECTIVO');
-    setMontoConquePaga('');
-  };
-
-  const confirmarCobro = () => {
-    if (!mesaACobrar) return;
-
-    const dineroCliente = parseFloat(montoConquePaga) || 0;
-    if (metodoPago === 'EFECTIVO' && dineroCliente < mesaACobrar.total) {
-      alert("El monto con el que paga el cliente es menor al total a pagar.");
-      return;
-    }
-
-    const vuelto = dineroCliente >= mesaACobrar.total ? dineroCliente - mesaACobrar.total : 0;
-
-    alert(`¡Cuenta de ${mesaACobrar.id} cobrada con éxito!\nTotal Pagado: S/ ${mesaACobrar.total.toFixed(2)}\nMétodo: ${metodoPago}\n${metodoPago === 'EFECTIVO' ? `Vuelto entregado: S/ ${vuelto.toFixed(2)}` : ''}`);
-
-    setMesas(mesas.map(m => m.id === mesaACobrar.id ? { ...m, estado: 'Libre', items: [], total: 0 } : m));
-    setMesaACobrar(null);
-  };
-
-  const agregarProductoAMesaDirecto = (prod) => {
-    if (!mesaParaAgregar) return;
-
-    setMesas(mesas.map(m => {
-      if (m.id === mesaParaAgregar.id) {
-        const existeIndex = m.items.findIndex(it => it.id === prod.id);
-        let nuevosItems = [...m.items];
-        if (existeIndex !== -1) {
-          nuevosItems[existeIndex] = {
-            ...nuevosItems[existeIndex],
-            cantidad: nuevosItems[existeIndex].cantidad + 1
-          };
+    const actualizadas = mesas.map(m => {
+      if (m.id === mesaSeleccionada.id) {
+        let items = [...(m.items || [])];
+        const index = items.findIndex(i => i.nombre === prod.nombre);
+        if (index !== -1) {
+          items[index].cantidad += 1;
         } else {
-          nuevosItems.push({ ...prod, cantidad: 1 });
+          items.push({ nombre: prod.nombre, precio, cantidad: 1, detalle: 'Papas + ensalada' });
         }
-        const nuevoTotal = m.total + parseFloat(prod.precio || 0);
-        return { ...m, items: nuevosItems, total: nuevoTotal };
+        const subtotal = items.reduce((acc, curr) => acc + (curr.precio * curr.cantidad), 0);
+        const igv = subtotal * 0.18;
+        const total = subtotal + igv;
+        return { ...m, estado: 'Ocupada', items, subtotal, igv, total };
       }
       return m;
-    }));
+    });
 
-    setMesaParaAgregar(prev => ({
-      ...prev,
-      items: prev.items.some(it => it.id === prod.id)
-        ? prev.items.map(it => it.id === prod.id ? { ...it, cantidad: it.cantidad + 1 } : it)
-        : [...prev.items, { ...prod, cantidad: 1 }],
-      total: prev.total + parseFloat(prod.precio || 0)
-    }));
+    setMesas(actualizadas);
+    const seleccionActualizada = actualizadas.find(m => m.id === mesaSeleccionada.id);
+    setMesaSeleccionada(seleccionActualizada);
+  };
+
+  const cambiarCantidadItem = (index, delta) => {
+    if (!mesaSeleccionada) return;
+
+    const actualizadas = mesas.map(m => {
+      if (m.id === mesaSeleccionada.id) {
+        let items = [...m.items];
+        items[index].cantidad += delta;
+        if (items[index].cantidad <= 0) {
+          items.splice(index, 1);
+        }
+        const subtotal = items.reduce((acc, curr) => acc + (curr.precio * curr.cantidad), 0);
+        const igv = subtotal * 0.18;
+        const total = subtotal + igv;
+        const estado = items.length === 0 ? 'Libre' : 'Ocupada';
+        return { ...m, estado, items, subtotal, igv, total };
+      }
+      return m;
+    });
+
+    setMesas(actualizadas);
+    const seleccionActualizada = actualizadas.find(m => m.id === mesaSeleccionada.id);
+    setMesaSeleccionada(seleccionActualizada);
+  };
+
+  const cobrarMesa = () => {
+    if (!mesaSeleccionada) return;
+    const mesaId = mesaSeleccionada.id;
+
+    if (mesaId && mesaId.includes(' + ')) {
+      const subMesasOriginales = mesaId.split(' + ').map(m => m.trim());
+      
+      setMesas(prevMesas => {
+        const mesasRestauradas = subMesasOriginales.map(idOriginal => ({
+          id: idOriginal,
+          estado: 'Libre',
+          personas: 4,
+          tiempo: '0 min en mesa',
+          moza: 'Lucía P.',
+          orden: '#0' + Math.floor(1000 + Math.random() * 9000),
+          items: [],
+          subtotal: 0,
+          igv: 0,
+          total: 0
+        }));
+
+        const sinLaCombinada = prevMesas.filter(m => m.id !== mesaId);
+        return [...sinLaCombinada, ...mesasRestauradas];
+      });
+
+      alert(`¡Mesa combinada ${mesaId} cobrada con éxito! Las mesas originales han sido separadas y liberadas.`);
+    } else {
+      const actualizadas = mesas.map(m => {
+        if (m.id === mesaId) {
+          return { ...m, estado: 'Libre', items: [], subtotal: 0, igv: 0, total: 0 };
+        }
+        return m;
+      });
+      setMesas(actualizadas);
+      alert(`¡${mesaId} cobrada y cerrada exitosamente!`);
+    }
+
+    setMesaSeleccionada(null);
+    setModalCobroAbierto(false);
+    setMontoPaga('');
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '1000px', position: 'relative' }}>
-      <h1 style={{ color: '#b91c1c', marginTop: 0 }}>🪑 Control de Mesas y Salón</h1>
-      <p style={{ color: '#6b7280' }}>Visualiza los pedidos activos, añade extras directamente a una mesa ocupada, cobra o cancela cuentas.</p>
+    <div className="salon-container">
+      
+      {/* SECCIÓN PRINCIPAL IZQUIERDA */}
+      <div className="salon-main">
+        
+        {/* FILTROS SUPERIORES */}
+        <div className="salon-header">
+          <div className="salon-filters">
+            <button 
+              onClick={() => setFiltroEstado('TODAS')}
+              className={`filter-btn ${filtroEstado === 'TODAS' ? 'filter-btn-todas' : 'filter-btn-inactive'}`}>
+              Todas <span className="badge-todas">{totalMesas}</span>
+            </button>
+            <button 
+              onClick={() => setFiltroEstado('LIBRE')}
+              className={`filter-btn ${filtroEstado === 'LIBRE' ? 'filter-btn-libre' : 'filter-btn-inactive'}`}>
+              Libre <span className="badge-libre">{libresCount}</span>
+            </button>
+            <button 
+              onClick={() => setFiltroEstado('OCUPADA')}
+              className={`filter-btn ${filtroEstado === 'OCUPADA' ? 'filter-btn-ocupada' : 'filter-btn-inactive'}`}>
+              Ocupada <span className="badge-ocupada">{ocupadasCount}</span>
+            </button>
+            <button 
+              onClick={() => setFiltroEstado('POR_COBRAR')}
+              className={`filter-btn ${filtroEstado === 'POR_COBRAR' ? 'filter-btn-cobrar' : 'filter-btn-inactive'}`}>
+              Por cobrar <span className="badge-cobrar">{porCobrarCount}</span>
+            </button>
+          </div>
 
-      {/* Formulario para añadir nuevas mesas */}
-      <form onSubmit={agregarNuevaMesa} style={{ background: '#fff', padding: '15px', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
-        <input 
-          type="text" 
-          placeholder="Nombre de mesa (Ej: Mesa VIP 1, Terraza 2)" 
-          value={nuevaMesaNombre} 
-          onChange={e => setNuevaMesaNombre(e.target.value)} 
-          style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} 
-        />
-        <button type="submit" style={{ backgroundColor: '#15803d', color: '#fff', border: 'none', padding: '9px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-          + Añadir Nueva Mesa
-        </button>
-      </form>
+          <button 
+            onClick={() => setMostrarModalNuevaMesa(true)}
+            className="btn-nueva-mesa">
+            + Nueva mesa
+          </button>
+        </div>
 
-      {/* Contenedores de las Mesas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-        {mesas.map(m => (
-          <div key={m.id} style={{ background: '#fff', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', borderTop: `5px solid ${m.estado === 'Ocupada' ? '#b91c1c' : '#15803d'}`, padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, color: '#1f2937' }}>{m.id}</h3>
-                <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', backgroundColor: m.estado === 'Ocupada' ? '#fee2e2' : '#dcfce7', color: m.estado === 'Ocupada' ? '#b91c1c' : '#15803d' }}>
-                  {m.estado}
-                </span>
-              </div>
+        {/* GRILLA DE TARJETAS DE MESAS */}
+        <div className="mesas-grid">
+          {mesasFiltradas.map(m => {
+            const isSelected = mesaSeleccionada?.id === m.id;
+            const isOcupada = m.estado === 'Ocupada' || m.estado === 'Por cobrar';
+            return (
+              <div 
+                key={m.id}
+                onClick={() => setMesaSeleccionada(m)}
+                className="mesa-card"
+                style={{
+                  border: isSelected ? '2px solid #ea580c' : '1px solid #e2e8f0',
+                  borderTop: `4px solid ${isOcupada ? '#ea580c' : '#22c55e'}`
+                }}
+              >
+                <div className="mesa-card-header">
+                  <span className="mesa-card-title">{m.id}</span>
+                  <span style={{ color: '#94a3b8', fontSize: '18px' }}>•••</span>
+                </div>
 
-              <div style={{ minHeight: '90px', maxHeight: '140px', overflowY: 'auto', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '8px 0', marginBottom: '10px' }}>
-                {m.items.length === 0 ? (
-                  <p style={{ color: '#9ca3af', fontSize: '13px', textAlign: 'center', margin: '30px 0' }}>Mesa libre / Sin pedidos</p>
-                ) : (
-                  m.items.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
-                      <span>{item.cantidad}x {item.nombre}</span>
-                      <span style={{ fontWeight: 'bold' }}>S/ {(item.precio * item.cantidad).toFixed(2)}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>
-                <span>Total a Pagar:</span>
-                <span style={{ color: '#b91c1c' }}>S/ {m.total.toFixed(2)}</span>
-              </div>
-
-              {/* Botones de acción */}
-              {m.estado === 'Ocupada' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <button onClick={() => setMesaParaAgregar(m)} style={{ backgroundColor: '#1e40af', color: '#fff', border: 'none', padding: '6px', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
-                    ➕ Añadir Producto Extra
-                  </button>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => cancelarPedidoMesa(m.id)} style={{ flex: 1, backgroundColor: '#9ca3af', color: '#fff', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
-                      ❌ Cancelar
-                    </button>
-                    <button onClick={() => abrirModalCobro(m)} style={{ flex: 1, backgroundColor: '#15803d', color: '#fff', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
-                      💰 Cobrar
-                    </button>
+                <div style={{ textAlign: 'center', margin: 'auto 0' }}>
+                  <div className="mesa-icon-container" style={{ 
+                    background: isOcupada ? '#ffedd5' : '#dcfce7', 
+                    color: isOcupada ? '#ea580c' : '#15803d'
+                  }}>
+                    🪑
                   </div>
                 </div>
-              ) : (
-                <div style={{ color: '#9ca3af', fontSize: '12px', textAlign: 'center', padding: '4px' }}>Mesa disponible</div>
-              )}
-            </div>
 
-          </div>
-        ))}
+                <div className="mesa-card-footer">
+                  <span>{m.personas || 4} personas</span>
+                  <strong style={{ color: isOcupada ? '#1e293b' : '#15803d' }}>
+                    {isOcupada ? `S/ ${(m.total || 0).toFixed(2)}` : 'Libre'}
+                  </strong>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
 
-      {/* MODAL PARA AÑADIR PRODUCTOS DIRECTO A MESA OCUPADA */}
-      {mesaParaAgregar && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', width: '500px', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', boxSizing: 'border-box' }}>
-            <h2 style={{ marginTop: 0, color: '#1e40af', borderBottom: '2px solid #e5e7eb', paddingBottom: '10px', fontSize: '18px' }}>
-              AÑADIR EXTRA A {mesaParaAgregar.id.toUpperCase()}
-            </h2>
-            <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '10px' }}>Haz clic en cualquier producto para sumarlo inmediatamente a la cuenta:</p>
+      {/* PANEL LATERAL DERECHO */}
+      {mesaSeleccionada ? (
+        <div className="sidebar-container salon-sidebar">
+          
+          <div className="sidebar-header">
+            <h2 className="sidebar-title">{mesaSeleccionada.id}</h2>
+            <span className={mesaSeleccionada.estado === 'Ocupada' ? 'sidebar-badge-ocupada' : 'sidebar-badge-libre'}>
+              {mesaSeleccionada.estado}
+            </span>
+          </div>
+          <p className="sidebar-subtitle">
+            Moza: {mesaSeleccionada.moza || 'Lucía P.'} • Orden {mesaSeleccionada.orden || '#0158'}
+          </p>
 
-            {/* GRILLA DE PRODUCTOS CLICKEABLES DENTRO DEL MODAL */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', maxHeight: '250px', overflowY: 'auto', margin: '10px 0', padding: '5px', border: '1px solid #e5e7eb', borderRadius: '6px', background: '#f9fafb' }}>
+          <hr className="sidebar-divider" />
+
+          {/* LISTA DE ITEMS */}
+          <div className="sidebar-items-list">
+            {(!mesaSeleccionada.items || mesaSeleccionada.items.length === 0) ? (
+              <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '14px', marginTop: '40px' }}>Mesa sin productos en la orden</p>
+            ) : (
+              mesaSeleccionada.items.map((item, idx) => (
+                <div key={idx} className="item-row">
+                  <div className="item-row-header">
+                    <span>{item.nombre}</span>
+                    <span>S/ {(item.precio * item.cantidad).toFixed(2)}</span>
+                  </div>
+                  <div className="item-detail">{item.detalle}</div>
+                  <div className="item-controls">
+                    <button onClick={() => cambiarCantidadItem(idx, -1)} className="qty-btn">-</button>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{item.cantidad}</span>
+                    <button onClick={() => cambiarCantidadItem(idx, 1)} className="qty-btn">+</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* SELECTOR DE PRODUCTOS */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '6px' }}>AÑADIR PLATO / BEBIDA:</label>
+            <select 
+              onChange={(e) => {
+                const prod = productos.find(p => p.id.toString() === e.target.value);
+                if (prod) agregarProductoAMesa(prod);
+                e.target.value = "";
+              }}
+              defaultValue=""
+              className="select-producto"
+            >
+              <option value="" disabled>Selecciona un producto del menú...</option>
               {productos.map(p => (
-                <button 
-                  key={p.id} 
-                  onClick={() => agregarProductoAMesaDirecto(p)} 
-                  style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '12px', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
-                >
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#1e293b' }}>{p.nombre}</div>
-                  <div style={{ color: '#b91c1c', fontSize: '13px', marginTop: '4px' }}>S/ {parseFloat(p.precio || 0).toFixed(2)}</div>
-                </button>
+                <option key={p.id} value={p.id}>
+                  {p.nombre} - S/ {parseFloat(p.precioVenta ?? p.precio ?? 0).toFixed(2)}
+                </option>
               ))}
-            </div>
+            </select>
+          </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', fontSize: '16px', marginBottom: '15px', background: '#e0f2fe', padding: '10px', borderRadius: '6px', color: '#0369a1' }}>
-              <span>Nuevo Total de la Mesa:</span>
-              <span>S/ {mesaParaAgregar.total.toFixed(2)}</span>
-            </div>
+          <hr className="sidebar-divider" />
 
-            <button onClick={() => setMesaParaAgregar(null)} style={{ width: '100%', backgroundColor: '#1e293b', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>
-              Terminar / Cerrar
+          {/* TOTALES */}
+          <div className="totales-row">
+            <span>Subtotal</span>
+            <span>S/ {(mesaSeleccionada.subtotal || 0).toFixed(2)}</span>
+          </div>
+          <div className="totales-row" style={{ marginBottom: '12px' }}>
+            <span>IGV (18%)</span>
+            <span>S/ {(mesaSeleccionada.igv || 0).toFixed(2)}</span>
+          </div>
+          <div className="totales-row-total">
+            <span>Total</span>
+            <span style={{ color: '#ea580c' }}>S/ {(mesaSeleccionada.total || 0).toFixed(2)}</span>
+          </div>
+
+          {/* ACCIONES INFERIORES */}
+          <div className="sidebar-actions">
+            <button className="btn-dividir">
+              Dividir cuenta
             </button>
+            <button 
+              onClick={() => setModalCobroAbierto(true)}
+              className="btn-cobrar">
+              Cobrar y cerrar
+            </button>
+          </div>
+
+        </div>
+      ) : (
+        <div className="sidebar-vacio">
+          Selecciona una mesa a la izquierda para ver su orden activa y gestionar productos.
+        </div>
+      )}
+
+      {/* MODAL NUEVA MESA */}
+      {mostrarModalNuevaMesa && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 style={{ marginTop: 0, color: '#1e293b' }}>Agregar Nueva Mesa</h3>
+            <form onSubmit={handleCrearMesa}>
+              <input 
+                type="text" 
+                placeholder="Ej. Mesa 13 o Terraza 3" 
+                value={nombreNuevaMesa}
+                onChange={(e) => setNombreNuevaMesa(e.target.value)}
+                className="modal-input"
+                autoFocus
+              />
+              <div className="modal-buttons">
+                <button type="button" onClick={() => setMostrarModalNuevaMesa(false)} className="btn-cancelar">Cancelar</button>
+                <button type="submit" className="btn-confirmar">Crear</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* MODAL DE COBRO PROFESIONAL */}
-      {mesaACobrar && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', width: '400px', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', boxSizing: 'border-box' }}>
+      {/* MODAL COBRO */}
+      {modalCobroAbierto && mesaSeleccionada && (
+        <div className="modal-overlay">
+          <div className="modal-content-cobro">
+            <h3 style={{ marginTop: 0, color: '#1e293b' }}>Cobrar Cuenta - {mesaSeleccionada.id}</h3>
+            <p style={{ color: '#64748b', fontSize: '14px' }}>Total a cancelar: <strong style={{ color: '#ea580c', fontSize: '16px' }}>S/ {mesaSeleccionada.total.toFixed(2)}</strong></p>
             
-            <h2 style={{ marginTop: 0, color: '#b91c1c', borderBottom: '2px solid #e5e7eb', paddingBottom: '10px' }}>
-              CUENTA {mesaACobrar.id.toUpperCase()}
-            </h2>
-
-            <div style={{ margin: '15px 0' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#374151' }}>PEDIDO:</h4>
-              <div style={{ maxHeight: '120px', overflowY: 'auto', background: '#f9fafb', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
-                {mesaACobrar.items.map((it, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '4px' }}>
-                    <span>{it.cantidad}x {it.nombre}</span>
-                    <span style={{ fontWeight: 'bold' }}>S/ {(it.precio * it.cantidad).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>TIPO DE PAGO:</label>
-              <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Método de pago:</label>
+              <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)} className="modal-input">
                 <option value="EFECTIVO">Efectivo</option>
                 <option value="YAPE">Yape / Plin</option>
                 <option value="TARJETA">Tarjeta / POS</option>
               </select>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', background: '#fee2e2', padding: '10px', borderRadius: '6px', color: '#b91c1c' }}>
-              <span>MONTO A PAGAR:</span>
-              <span>S/ {mesaACobrar.total.toFixed(2)}</span>
-            </div>
-
             {metodoPago === 'EFECTIVO' && (
-              <div style={{ marginBottom: '20px', background: '#f9fafb', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
-                <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>CLIENTE PAGA CON (S/):</label>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Efectivo recibido (S/):</label>
                 <input 
                   type="number" 
-                  placeholder="Ej: 100" 
-                  value={montoConquePaga} 
-                  onChange={e => setMontoConquePaga(e.target.value)} 
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '15px', fontWeight: 'bold', boxSizing: 'border-box' }} 
+                  placeholder="0.00" 
+                  value={montoPaga} 
+                  onChange={(e) => setMontoPaga(e.target.value)}
+                  className="modal-input" 
                 />
-                {montoConquePaga !== '' && (
-                  <div style={{ marginTop: '8px', fontSize: '15px', color: parseFloat(montoConquePaga) >= mesaACobrar.total ? '#15803d' : '#b91c1c', fontWeight: 'bold' }}>
-                    VUELTO: S/ {(parseFloat(montoConquePaga) >= mesaACobrar.total ? parseFloat(montoConquePaga) - mesaACobrar.total : 0).toFixed(2)}
-                  </div>
+                {montoPaga && (
+                  <p style={{ fontSize: '14px', marginTop: '6px', fontWeight: 'bold', color: parseFloat(montoPaga) >= mesaSeleccionada.total ? '#15803d' : '#b91c1c' }}>
+                    Vuelto: S/ {Math.max(0, parseFloat(montoPaga) - mesaSeleccionada.total).toFixed(2)}
+                  </p>
                 )}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setMesaACobrar(null)} style={{ flex: 1, backgroundColor: '#9ca3af', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Cerrar
-              </button>
-              <button onClick={confirmarCobro} style={{ flex: 1, backgroundColor: '#15803d', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Confirmar Cobro
-              </button>
+            <div className="modal-buttons">
+              <button onClick={() => setModalCobroAbierto(false)} className="btn-cancelar">Cancelar</button>
+              <button onClick={cobrarMesa} className="btn-confirmar-pago">Confirmar Pago</button>
             </div>
-
           </div>
         </div>
       )}

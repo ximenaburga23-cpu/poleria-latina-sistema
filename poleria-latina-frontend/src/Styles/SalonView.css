@@ -1,0 +1,351 @@
+/* SalonView.css */
+
+.salon-container {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.salon-main {
+  flex: 1;
+}
+
+.salon-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.salon-filters {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.filter-btn-todas { background: #fff; color: #ea580c; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.filter-btn-libre { background: #fff; color: #15803d; }
+.filter-btn-ocupada { background: #fff; color: #b91c1c; }
+.filter-btn-cobrar { background: #fff; color: #d97706; }
+.filter-btn-inactive { background: transparent; color: #64748b; }
+
+.badge-todas { background: #ffedd5; color: #c2410c; padding: 2px 6px; border-radius: 10px; font-size: 12px; margin-left: 4px; }
+.badge-libre { background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 10px; font-size: 12px; margin-left: 4px; }
+.badge-ocupada { background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 10px; font-size: 12px; margin-left: 4px; }
+.badge-cobrar { background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 10px; font-size: 12px; margin-left: 4px; }
+
+.btn-nueva-mesa {
+  background: #ea580c;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2);
+}
+
+.mesas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.mesa-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 140px;
+  transition: all 0.2s ease;
+}
+
+.mesa-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.mesa-card-title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.mesa-icon-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 6px auto;
+  font-weight: bold;
+}
+
+.mesa-card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Panel Derecho */
+.salon-sidebar {
+  width: 380px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: 20px;
+  color: #1e293b;
+}
+
+.sidebar-badge-ocupada {
+  background: #ffedd5;
+  color: #c2410c;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.sidebar-badge-libre {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.sidebar-subtitle {
+  color: #64748b;
+  font-size: 13px;
+  margin: 0 0 16px 0;
+}
+
+.sidebar-divider {
+  border: 0;
+  border-top: 1px solid #f1f5f9;
+  margin: 0 0 16px 0;
+}
+
+.sidebar-items-list {
+  flex: 1;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.item-row {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f8fafc;
+  padding-bottom: 8px;
+}
+
+.item-row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.item-detail {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-btn {
+  width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.select-producto {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.totales-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.totales-row-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1e293b;
+  margin-bottom: 20px;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-dividir {
+  flex: 1;
+  padding: 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.btn-cobrar {
+  flex: 1;
+  padding: 12px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
+}
+
+.sidebar-vacio {
+  width: 380px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* Modales */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  width: 360px;
+  padding: 24px;
+  border-radius: 16px;
+}
+
+.modal-content-cobro {
+  background: #fff;
+  width: 400px;
+  padding: 24px;
+  border-radius: 16px;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-cancelar {
+  flex: 1;
+  padding: 10px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-confirmar {
+  flex: 1;
+  padding: 10px;
+  background: #ea580c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-confirmar-pago {
+  flex: 1;
+  padding: 10px;
+  background: #15803d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
